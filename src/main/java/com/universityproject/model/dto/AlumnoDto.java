@@ -1,4 +1,4 @@
-package com.universityproject.dto;
+package com.universityproject.model.dto;
 
 import com.universityproject.model.Asignatura;
 import lombok.Data;

@@ -1,6 +1,6 @@
 package com.universityproject.controller;
 
-import com.universityproject.dto.AlumnoDto;
+import com.universityproject.model.dto.AlumnoDto;
 import com.universityproject.model.EstadoAsignatura;
 import com.universityproject.service.AlumnoService;
 import org.springframework.beans.factory.annotation.Autowired;

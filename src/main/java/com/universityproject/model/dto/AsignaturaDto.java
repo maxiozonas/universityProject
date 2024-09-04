@@ -1,9 +1,9 @@
-package com.universityproject.dto;
+package com.universityproject.model.dto;
 
 import lombok.Data;
 
 @Data
 public class AsignaturaDto {
     private String estado;
-    private MateriaDto materia;
+    private MateriaDTO materia;
 }

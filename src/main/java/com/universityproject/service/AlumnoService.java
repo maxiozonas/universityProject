@@ -1,6 +1,6 @@
 package com.universityproject.service;
 
-import com.universityproject.dto.AlumnoDto;
+import com.universityproject.model.dto.AlumnoDto;
 import com.universityproject.model.EstadoAsignatura;
 import org.springframework.stereotype.Service;
 

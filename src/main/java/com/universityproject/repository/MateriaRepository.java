@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface MateriaRepository extends MongoRepository<Materia, String> {
-    List<Materia> findByNombreContainingIgnoreCase(String nombre, Sort sort);
+    List<Materia> findByNombreContainingIgnoreCase(String nombre);
 }

@@ -1,13 +1,21 @@
 package com.universityproject.service;
 
-import com.universityproject.dto.MateriaDto;
-import com.universityproject.model.Materia;
+import com.universityproject.model.dto.MateriaDTO;
 
 import java.util.List;
 
 public interface MateriaService {
-    Materia crearMateria(MateriaDto materiaDto);
-    Materia actualizarMateria(String id, MateriaDto materiaDto);
+    MateriaDTO crearMateria(MateriaDTO materiaDTO);
+
+    MateriaDTO modificarMateria(String id, MateriaDTO materiaDTO);
+
     void eliminarMateria(String id);
-    List<Materia> obtenerMateriasPorNombre(String nombre, String order);
+
+    MateriaDTO ObtenerMateriaPorId(String id);
+
+    List<MateriaDTO> ObtenerMaterias();
+
+    List<MateriaDTO> ObtenerMateriasPorNombre(String nombre);
+
+    List<MateriaDTO> ObtenerMateriasOrdenadas(String ordenBy);
 }
