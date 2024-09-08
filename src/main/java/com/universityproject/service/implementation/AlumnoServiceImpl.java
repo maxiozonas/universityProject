@@ -1,121 +1,155 @@
 package com.universityproject.service.implementation;
 
-import com.universityproject.model.dto.AlumnoDto;
 import com.universityproject.model.Alumno;
 import com.universityproject.model.Asignatura;
 import com.universityproject.model.EstadoAsignatura;
+import com.universityproject.model.dto.AlumnoDTO;
+import com.universityproject.model.dto.AsignaturaDTO;
 import com.universityproject.repository.AlumnoRepository;
+import com.universityproject.repository.MateriaRepository;
 import com.universityproject.service.AlumnoService;
-import com.universityproject.service.exception.AlumnoNotFoundException;
+import com.universityproject.service.exception.MateriaNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Implementación del servicio de alumnos, que maneja la lógica de negocio para las operaciones CRUD sobre alumnos.
+ */
 @Service
 public class AlumnoServiceImpl implements AlumnoService {
 
     @Autowired
     private AlumnoRepository alumnoRepository;
 
+    @Autowired
+    private MateriaRepository materiaRepository;
+
+    /**
+     * Crea un nuevo alumno en el sistema.
+     * @param alumnoDTO DTO que contiene los datos del alumno a crear.
+     * @return El DTO del alumno recién creado.
+     */
     @Override
-    public AlumnoDto crearAlumno(AlumnoDto alumnoDto) {
-        try {
-            Alumno alumno = mapearDTOAEntidad(alumnoDto);
-            Alumno alumnoGuardado = alumnoRepository.save(alumno);
-            return mapearEntidadADTO(alumnoGuardado);
-        } catch (Exception e) {
-            throw new RuntimeException("Error al crear el alumno: " + e.getMessage());
-        }
+    public AlumnoDTO crearAlumno(AlumnoDTO alumnoDTO) {
+        Alumno alumno = new Alumno();
+        alumno.setNombre(alumnoDTO.getNombre());
+        alumno.setApellido(alumnoDTO.getApellido());
+        alumno.setDni(alumnoDTO.getDni());
+
+        // Asigna el estado inicial de NO_CURSADA a cada asignatura utilizando materias existentes
+        List<Asignatura> asignaturas = alumnoDTO.getAsignaturas().stream()
+                .map(asignaturaDTO -> {
+                    Asignatura asignatura = new Asignatura();
+                    String materiaId = materiaRepository.findByNombre(asignaturaDTO.getMateriaNombre())
+                            .orElseThrow(() -> new MateriaNotFoundException("Materia no encontrada"))
+                            .getId();
+
+                    asignatura.setMateriaId(materiaId);
+                    asignatura.setEstadoAsignatura(EstadoAsignatura.NO_CURSADA); // Estado predeterminado
+                    return asignatura;
+                }).collect(Collectors.toList());
+
+        alumno.setAsignaturas(asignaturas);
+        alumno = alumnoRepository.save(alumno);
+
+        return mapToDTO(alumno);
     }
 
+    /**
+     * Modifica un alumno existente.
+     * @param id El ID del alumno a modificar.
+     * @param alumnoDTO DTO con los nuevos datos del alumno.
+     * @return El DTO del alumno modificado.
+     */
     @Override
-    public List<AlumnoDto> obtenerTodosLosAlumnos() {
-        try {
-            List<Alumno> alumnos = alumnoRepository.findAll();
-            if (alumnos.isEmpty()) {
-                throw new Exception("No hay alumnos registrados.");
-            }
-            return alumnos.stream()
-                    .map(this::mapearEntidadADTO)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            throw new RuntimeException("Error al obtener la lista de alumnos: " + e.getMessage());
-        }
+    public AlumnoDTO modificarAlumno(String id, AlumnoDTO alumnoDTO) {
+        Alumno alumno = alumnoRepository.findById(id).orElseThrow(() -> new RuntimeException("Alumno no encontrado"));
+        alumno.setNombre(alumnoDTO.getNombre());
+        alumno.setApellido(alumnoDTO.getApellido());
+        alumno.setDni(alumnoDTO.getDni());
+
+        alumnoRepository.save(alumno);
+        return mapToDTO(alumno);
     }
 
-    @Override
-    public AlumnoDto obtenerAlumnoPorId(String id) {
-        try {
-            Alumno alumno = alumnoRepository.findById(id)
-                    .orElseThrow(() -> new AlumnoNotFoundException("Alumno no encontrado con el ID: " + id));
-            return mapearEntidadADTO(alumno);
-        } catch (AlumnoNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error al obtener el alumno: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public AlumnoDto actualizarAlumno(String id, AlumnoDto alumnoDto) {
-        try {
-            Alumno alumno = mapearDTOAEntidad(alumnoDto);
-            alumno.setId(id);
-            Alumno alumnoActualizado = alumnoRepository.save(alumno);
-            return mapearEntidadADTO(alumnoActualizado);
-        } catch (Exception e) {
-            throw new RuntimeException("Error al actualizar el alumno: " + e.getMessage());
-        }
-    }
-
+    /**
+     * Elimina un alumno del sistema.
+     * @param id El ID del alumno a eliminar.
+     */
     @Override
     public void eliminarAlumno(String id) {
-        try {
-            alumnoRepository.deleteById(id);
-        } catch (Exception e) {
-            throw new RuntimeException("Error al eliminar el alumno: " + e.getMessage());
-        }
+        Alumno alumno = alumnoRepository.findById(id).orElseThrow(() -> new RuntimeException("Alumno no encontrado"));
+        alumnoRepository.delete(alumno);
     }
 
+    /**
+     * Obtiene un alumno por su ID.
+     * @param id El ID del alumno.
+     * @return El DTO del alumno encontrado.
+     */
     @Override
-    public AlumnoDto actualizarAsignaturaDeAlumno(String idAlumno, String idAsignatura, EstadoAsignatura nuevoEstado) {
-        try {
-            Alumno alumno = alumnoRepository.findById(idAlumno)
-                    .orElseThrow(() -> new AlumnoNotFoundException("Alumno no encontrado con el ID: " + idAlumno));
-
-            Asignatura asignatura = alumno.getAsignaturas().stream()
-                    .filter(a -> a.getId().equals(idAsignatura))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Asignatura no encontrada con el ID: " + idAsignatura));
-
-            asignatura.setEstado(nuevoEstado);
-            Alumno alumnoActualizado = alumnoRepository.save(alumno);
-            return mapearEntidadADTO(alumnoActualizado);
-        } catch (AlumnoNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error al actualizar la asignatura del alumno: " + e.getMessage());
-        }
+    public AlumnoDTO obtenerAlumnoPorId(String id) {
+        Alumno alumno = alumnoRepository.findById(id).orElseThrow(() -> new RuntimeException("Alumno no encontrado"));
+        return mapToDTO(alumno);
     }
 
-    private Alumno mapearDTOAEntidad(AlumnoDto alumnoDto) {
-        Alumno alumno = new Alumno();
-        alumno.setNombre(alumnoDto.getNombre());
-        alumno.setApellido(alumnoDto.getApellido());
-        alumno.setDni(alumnoDto.getDni());
-        alumno.setAsignaturas(alumnoDto.getAsignaturas());
-        return alumno;
+    /**
+     * Lista todos los alumnos registrados en el sistema.
+     * @return Lista de DTOs de todos los alumnos.
+     */
+    @Override
+    public List<AlumnoDTO> listarAlumnos() {
+        return alumnoRepository.findAll().stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-    private AlumnoDto mapearEntidadADTO(Alumno alumno) {
-        AlumnoDto alumnoDto = new AlumnoDto();
-        alumnoDto.setId(alumno.getId());
-        alumnoDto.setNombre(alumno.getNombre());
-        alumnoDto.setApellido(alumno.getApellido());
-        alumnoDto.setDni(alumno.getDni());
-        alumnoDto.setAsignaturas(alumno.getAsignaturas());
-        return alumnoDto;
+    /**
+     * Actualiza el estado de una asignatura para un alumno.
+     * @param idAlumno El ID del alumno.
+     * @param idAsignatura El ID de la asignatura.
+     * @param estado El nuevo estado de la asignatura.
+     * @return El DTO del alumno con el estado de la asignatura actualizado.
+     */
+    @Override
+    public AlumnoDTO actualizarEstadoAsignatura(String idAlumno, String idAsignatura, EstadoAsignatura estado) {
+        Alumno alumno = alumnoRepository.findById(idAlumno).orElseThrow(() -> new RuntimeException("Alumno no encontrado"));
+
+        // Actualiza el estado de la asignatura correspondiente
+        alumno.getAsignaturas().stream()
+                .filter(asignatura -> asignatura.getMateriaId().equals(idAsignatura))
+                .forEach(asignatura -> asignatura.setEstadoAsignatura(estado));
+
+        alumnoRepository.save(alumno);
+        return mapToDTO(alumno);
+    }
+
+    /**
+     * Convierte un objeto Alumno en un objeto AlumnoDTO.
+     * @param alumno El alumno a convertir.
+     * @return El DTO del alumno.
+     */
+    private AlumnoDTO mapToDTO(Alumno alumno) {
+        AlumnoDTO alumnoDTO = new AlumnoDTO();
+        alumnoDTO.setId(alumno.getId());
+        alumnoDTO.setNombre(alumno.getNombre());
+        alumnoDTO.setApellido(alumno.getApellido());
+        alumnoDTO.setDni(alumno.getDni());
+
+        // Mapea las asignaturas del alumno a AsignaturaDTO
+        List<AsignaturaDTO> asignaturasDTO = alumno.getAsignaturas().stream().map(asignatura -> {
+            AsignaturaDTO asignaturaDTO = new AsignaturaDTO();
+            asignaturaDTO.setMateriaNombre(materiaRepository.findById(asignatura.getMateriaId())
+                    .orElseThrow(() -> new RuntimeException("Materia no encontrada"))
+                    .getNombre());
+            asignaturaDTO.setEstadoAsignatura(asignatura.getEstadoAsignatura());
+            return asignaturaDTO;
+        }).collect(Collectors.toList());
+
+        alumnoDTO.setAsignaturas(asignaturasDTO);
+        return alumnoDTO;
     }
 }
+
+

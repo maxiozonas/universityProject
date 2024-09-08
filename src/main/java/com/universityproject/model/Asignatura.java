@@ -9,6 +9,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Asignatura {
     @Id
     private String id;
-    private Materia materia;
-    private EstadoAsignatura estado;
+    private String materiaId;
+    private EstadoAsignatura estadoAsignatura;
 }

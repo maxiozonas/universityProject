@@ -1,15 +1,16 @@
 package com.universityproject.controller;
 
-import com.universityproject.model.dto.AlumnoDto;
 import com.universityproject.model.EstadoAsignatura;
+import com.universityproject.model.dto.AlumnoDTO;
 import com.universityproject.service.AlumnoService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Controlador para manejar las operaciones CRUD relacionadas con los alumnos.
+ */
 @RestController
 @RequestMapping("/alumnos")
 public class AlumnoController {
@@ -17,41 +18,65 @@ public class AlumnoController {
     @Autowired
     private AlumnoService alumnoService;
 
+    /**
+     * Crea un nuevo alumno en el sistema.
+     * @param alumnoDTO Objeto DTO que contiene los datos del alumno.
+     * @return El DTO del alumno recién creado.
+     */
     @PostMapping
-    public ResponseEntity<AlumnoDto> crearAlumno(@RequestBody AlumnoDto AlumnoDto) {
-        AlumnoDto alumnoCreado = alumnoService.crearAlumno(AlumnoDto);
-        return new ResponseEntity<>(alumnoCreado, HttpStatus.CREATED);
+    public AlumnoDTO crearAlumno(@RequestBody AlumnoDTO alumnoDTO) {
+        return alumnoService.crearAlumno(alumnoDTO);
     }
 
+    /**
+     * Modifica un alumno existente.
+     * @param idAlumno El ID del alumno a modificar.
+     * @param alumnoDTO El objeto DTO con los nuevos datos del alumno.
+     * @return El DTO del alumno modificado.
+     */
+    @PutMapping("/{idAlumno}")
+    public AlumnoDTO modificarAlumno(@PathVariable String idAlumno, @RequestBody AlumnoDTO alumnoDTO) {
+        return alumnoService.modificarAlumno(idAlumno, alumnoDTO);
+    }
+
+    /**
+     * Elimina un alumno del sistema.
+     * @param idAlumno El ID del alumno a eliminar.
+     */
+    @DeleteMapping("/{idAlumno}")
+    public void eliminarAlumno(@PathVariable String idAlumno) {
+        alumnoService.eliminarAlumno(idAlumno);
+    }
+
+    /**
+     * Obtiene un alumno por su ID.
+     * @param idAlumno El ID del alumno que se desea obtener.
+     * @return El DTO del alumno correspondiente al ID proporcionado.
+     */
+    @GetMapping("/{idAlumno}")
+    public AlumnoDTO obtenerAlumnoPorId(@PathVariable String idAlumno) {
+        return alumnoService.obtenerAlumnoPorId(idAlumno);
+    }
+
+    /**
+     * Lista todos los alumnos registrados.
+     * @return Una lista de DTOs de todos los alumnos.
+     */
     @GetMapping
-    public ResponseEntity<List<AlumnoDto>> obtenerTodosLosAlumnos() {
-        List<AlumnoDto> alumnos = alumnoService.obtenerTodosLosAlumnos();
-        return new ResponseEntity<>(alumnos, HttpStatus.OK);
+    public List<AlumnoDTO> listarAlumnos() {
+        return alumnoService.listarAlumnos();
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<AlumnoDto> obtenerAlumnoPorId(@PathVariable String id) {
-        AlumnoDto alumno = alumnoService.obtenerAlumnoPorId(id);
-        return new ResponseEntity<>(alumno, HttpStatus.OK);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<AlumnoDto> actualizarAlumno(@PathVariable String id, @RequestBody AlumnoDto alumnoDto) {
-        AlumnoDto alumnoActualizado = alumnoService.actualizarAlumno(id, alumnoDto);
-        return new ResponseEntity<>(alumnoActualizado, HttpStatus.OK);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarAlumno(@PathVariable String id) {
-        alumnoService.eliminarAlumno(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-
-    @PutMapping("/alumno/{idAlumno}/asignatura/{idAsignatura}")
-    public ResponseEntity<AlumnoDto> actualizarAsignaturaDeAlumno(@PathVariable String idAlumno,
-                                                                  @PathVariable String idAsignatura,
-                                                                  @RequestBody EstadoAsignatura nuevoEstado) {
-        AlumnoDto alumnoActualizado = alumnoService.actualizarAsignaturaDeAlumno(idAlumno, idAsignatura, nuevoEstado);
-        return ResponseEntity.ok(alumnoActualizado);
+    /**
+     * Actualiza el estado de una asignatura para un alumno.
+     * @param idAlumno El ID del alumno.
+     * @param idAsignatura El ID de la asignatura.
+     * @param estado El nuevo estado de la asignatura.
+     * @return El DTO del alumno con el estado de la asignatura actualizado.
+     */
+    @PutMapping("/{idAlumno}/asignatura/{idAsignatura}")
+    public AlumnoDTO actualizarEstadoAsignatura(@PathVariable String idAlumno, @PathVariable String idAsignatura, @RequestBody EstadoAsignatura estado) {
+        return alumnoService.actualizarEstadoAsignatura(idAlumno, idAsignatura, estado);
     }
 }
+
