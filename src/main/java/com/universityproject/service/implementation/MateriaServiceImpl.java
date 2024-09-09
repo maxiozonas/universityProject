@@ -175,8 +175,20 @@ public class MateriaServiceImpl implements MateriaService {
         materiaDTO.setNombre(materia.getNombre());
         materiaDTO.setAnio(materia.getAnio());
         materiaDTO.setCuatrimestre(materia.getCuatrimestre());
-        materiaDTO.setCorrelativasIds(materia.getCorrelativasIds());
-        materiaDTO.setCarreraId(materia.getCarreraId());
+
+        // Obtener los nombres de las correlativas
+        List<String> correlativasNombres = materia.getCorrelativasIds().stream()
+                .map(correlativaId -> materiaRepository.findById(correlativaId)
+                        .map(Materia::getNombre)
+                        .orElse("Correlativa no encontrada"))
+                .collect(Collectors.toList());
+        materiaDTO.setCorrelativasIds(correlativasNombres);
+
+        // Obtener el nombre de la carrera
+        String carreraNombre = carreraRepository.findById(materia.getCarreraId())
+                .map(Carrera::getNombre)
+                .orElse("Carrera no encontrada");
+        materiaDTO.setCarreraId(carreraNombre);
 
         return materiaDTO;
     }

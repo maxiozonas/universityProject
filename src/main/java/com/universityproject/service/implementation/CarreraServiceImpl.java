@@ -2,12 +2,15 @@ package com.universityproject.service.implementation;
 
 import com.universityproject.model.dto.CarreraDTO;
 import com.universityproject.model.Carrera;
+import com.universityproject.model.Materia;
 import com.universityproject.repository.CarreraRepository;
+import com.universityproject.repository.MateriaRepository;
 import com.universityproject.service.CarreraService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -19,6 +22,9 @@ public class CarreraServiceImpl implements CarreraService {
 
     @Autowired
     private CarreraRepository carreraRepository;
+
+    @Autowired
+    private MateriaRepository materiaRepository;
 
     /**
      * Crea una nueva carrera.
@@ -107,7 +113,16 @@ public class CarreraServiceImpl implements CarreraService {
         carreraDTO.setCodigo(carrera.getCodigo());
         carreraDTO.setDepartamento(carrera.getDepartamento());
         carreraDTO.setCantidadCuatrimestres(carrera.getCantidadCuatrimestres());
-        carreraDTO.setMateriasIds(carrera.getMateriasIds());
+
+        // Obtener los nombres de las materias desde sus IDs
+        List<String> materiasNombres = carrera.getMateriasIds().stream()
+                .filter(Objects::nonNull) // Asegurarse de que no haya IDs nulos
+                .map(id -> materiaRepository.findById(id)
+                        .map(Materia::getNombre)
+                        .orElse("Materia no encontrada"))
+                .collect(Collectors.toList());
+
+        carreraDTO.setMateriasNombres(materiasNombres);
         return carreraDTO;
     }
 }

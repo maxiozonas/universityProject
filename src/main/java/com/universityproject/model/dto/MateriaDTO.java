@@ -12,6 +12,9 @@ public class MateriaDTO {
     private String nombre;
     private int anio;
     private int cuatrimestre;
-    private List<String> correlativasIds = new ArrayList<>();
+    private List<String> correlativasIds; // IDs de las materias correlativas
     private String carreraId;
+
+    private List<String> correlativasNombres = new ArrayList<>();
+    private String carreraNombre;
 }

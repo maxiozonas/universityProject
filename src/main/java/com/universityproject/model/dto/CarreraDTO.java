@@ -11,5 +11,5 @@ public class CarreraDTO {
     private String codigo;
     private int departamento;
     private int cantidadCuatrimestres;
-    private List<String> materiasIds; //Solo los ids de las materias
+    private List<String> materiasNombres;
 }
