@@ -1,5 +1,7 @@
 package com.universityproject.service.implementation;
 
+import com.universityproject.model.dto.CarreraSimpleDTO;
+import com.universityproject.model.dto.CorrelativaSimpleDTO;
 import com.universityproject.model.dto.MateriaDTO;
 import com.universityproject.model.Carrera;
 import com.universityproject.model.Materia;
@@ -40,11 +42,11 @@ public class MateriaServiceImpl implements MateriaService {
         materia.setAnio(materiaDTO.getAnio());
         materia.setCuatrimestre(materiaDTO.getCuatrimestre());
         materia.setCorrelativasIds(materiaDTO.getCorrelativasIds());
-        materia.setCarreraId(materiaDTO.getCarreraId());
+        materia.setCarreraId(materiaDTO.getCarrera().getId());
 
         materia = materiaRepository.save(materia);
 
-        Carrera carrera = carreraRepository.findById(materiaDTO.getCarreraId())
+        Carrera carrera = carreraRepository.findById(materiaDTO.getCarrera().getId())
                 .orElseThrow(() -> new RuntimeException("Carrera no encontrada"));
 
         List<String> materiasIds = Optional.ofNullable(carrera.getMateriasIds())
@@ -176,19 +178,32 @@ public class MateriaServiceImpl implements MateriaService {
         materiaDTO.setAnio(materia.getAnio());
         materiaDTO.setCuatrimestre(materia.getCuatrimestre());
 
-        // Obtener los nombres de las correlativas
-        List<String> correlativasNombres = materia.getCorrelativasIds().stream()
+        // Convertir correlativas
+        List<CorrelativaSimpleDTO> correlativasNombres = materia.getCorrelativasIds().stream()
                 .map(correlativaId -> materiaRepository.findById(correlativaId)
-                        .map(Materia::getNombre)
-                        .orElse("Correlativa no encontrada"))
+                        .map(correlativa -> {
+                            CorrelativaSimpleDTO correlativaDTO = new CorrelativaSimpleDTO();
+                            correlativaDTO.setId(correlativa.getId());
+                            correlativaDTO.setNombre(correlativa.getNombre());
+                            return correlativaDTO;
+                        })
+                        .orElse(null)) // Puedes manejar el caso de correlativa no encontrada
+                .filter(correlativa -> correlativa != null)
                 .collect(Collectors.toList());
-        materiaDTO.setCorrelativasIds(correlativasNombres);
 
-        // Obtener el nombre de la carrera
-        String carreraNombre = carreraRepository.findById(materia.getCarreraId())
-                .map(Carrera::getNombre)
-                .orElse("Carrera no encontrada");
-        materiaDTO.setCarreraId(carreraNombre);
+        materiaDTO.setCorrelativas(correlativasNombres);
+
+        // Convertir carrera
+        CarreraSimpleDTO carreraDTO = carreraRepository.findById(materia.getCarreraId())
+                .map(carrera -> {
+                    CarreraSimpleDTO carreraSimpleDTO = new CarreraSimpleDTO();
+                    carreraSimpleDTO.setId(carrera.getId());
+                    carreraSimpleDTO.setNombre(carrera.getNombre());
+                    return carreraSimpleDTO;
+                })
+                .orElse(null); // Puedes manejar el caso de carrera no encontrada
+
+        materiaDTO.setCarrera(carreraDTO);
 
         return materiaDTO;
     }

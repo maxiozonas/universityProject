@@ -51,7 +51,7 @@ public class CarreraControllerTest {
         carreraDTO.setCodigo("IS001");
         carreraDTO.setDepartamento(1);
         carreraDTO.setCantidadCuatrimestres(10);
-        carreraDTO.setMateriasIds(Arrays.asList("materia1", "materia2"));
+        carreraDTO.setMateriasNombres(Arrays.asList("materia1", "materia2"));
     }
 
     @Test

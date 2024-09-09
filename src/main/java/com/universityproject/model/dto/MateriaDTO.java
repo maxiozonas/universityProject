@@ -12,9 +12,7 @@ public class MateriaDTO {
     private String nombre;
     private int anio;
     private int cuatrimestre;
-    private List<String> correlativasIds; // IDs de las materias correlativas
-    private String carreraId;
-
-    private List<String> correlativasNombres = new ArrayList<>();
-    private String carreraNombre;
+    private List<String> correlativasIds; // Se mantiene para envíos
+    private CarreraSimpleDTO carrera; // Muestra el id y nombre de la carrera
+    private List<CorrelativaSimpleDTO> correlativas; // Lista de correlativas con id y nombre
 }

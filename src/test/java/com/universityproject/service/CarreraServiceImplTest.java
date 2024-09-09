@@ -44,7 +44,7 @@ class CarreraServiceImplTest {
         carreraDTO.setCodigo(carrera.getCodigo());
         carreraDTO.setDepartamento(carrera.getDepartamento());
         carreraDTO.setCantidadCuatrimestres(carrera.getCantidadCuatrimestres());
-        carreraDTO.setMateriasIds(carrera.getMateriasIds());
+        carreraDTO.setMateriasNombres(carrera.getMateriasIds());
     }
 
     @Test
