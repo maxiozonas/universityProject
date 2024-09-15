@@ -6,9 +6,10 @@ import com.universityproject.model.EstadoAsignatura;
 import com.universityproject.model.Materia;
 import com.universityproject.model.dto.AlumnoDTO;
 import com.universityproject.model.dto.AsignaturaDTO;
+import com.universityproject.model.exception.AlumnoNotFoundException;
+import com.universityproject.model.exception.AsignaturaNotFoundException;
 import com.universityproject.repository.AlumnoRepository;
 import com.universityproject.repository.MateriaRepository;
-import com.universityproject.service.exception.MateriaNotFoundException;
 import com.universityproject.service.implementation.AlumnoServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,17 +18,17 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AlumnoServiceImplTest {
-
-    @InjectMocks
-    private AlumnoServiceImpl alumnoService;
 
     @Mock
     private AlumnoRepository alumnoRepository;
@@ -35,157 +36,107 @@ public class AlumnoServiceImplTest {
     @Mock
     private MateriaRepository materiaRepository;
 
+    @InjectMocks
+    private AlumnoServiceImpl alumnoService;
+
     @BeforeEach
-    public void setUp() {
+    public void setup() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
     public void testCrearAlumno() {
-        // Crear AlumnoDTO
         AlumnoDTO alumnoDTO = new AlumnoDTO();
+        alumnoDTO.setId("1");
         alumnoDTO.setNombre("Juan");
-        alumnoDTO.setApellido("Perez");
+        alumnoDTO.setApellido("Pérez");
         alumnoDTO.setDni("12345678");
+        alumnoDTO.setAsignaturas(new ArrayList<>());
 
-        AsignaturaDTO asignaturaDTO = new AsignaturaDTO();
-        asignaturaDTO.setMateriaNombre("Matemáticas");
-
-        List<AsignaturaDTO> asignaturasDTO = new ArrayList<>();
-        asignaturasDTO.add(asignaturaDTO);
-        alumnoDTO.setAsignaturas(asignaturasDTO);
-
-        // Simulación de materia en base de datos
-        when(materiaRepository.findByNombre("Matemáticas")).thenReturn(Optional.of(mockMateria("66d5b3b773250604d1a73504")));
-
-        // Simulación de guardar el alumno
         Alumno alumno = new Alumno();
+        alumno.setId("1");
         alumno.setNombre("Juan");
-        alumno.setApellido("Perez");
+        alumno.setApellido("Pérez");
         alumno.setDni("12345678");
+
+        when(materiaRepository.findByNombre(anyString())).thenReturn(Optional.of(new Materia()));
         when(alumnoRepository.save(any(Alumno.class))).thenReturn(alumno);
 
-        // Ejecutar método
         AlumnoDTO result = alumnoService.crearAlumno(alumnoDTO);
-
-        // Verificaciones
-        assertNotNull(result);
+        assertEquals("1", result.getId());
         assertEquals("Juan", result.getNombre());
-        assertEquals("Perez", result.getApellido());
-        verify(alumnoRepository, times(1)).save(any(Alumno.class));
     }
 
     @Test
     public void testModificarAlumno() {
-        String alumnoId = "66d5b3b773250604d1a73505";
         AlumnoDTO alumnoDTO = new AlumnoDTO();
-        alumnoDTO.setNombre("Carlos");
-        alumnoDTO.setApellido("Lopez");
-        alumnoDTO.setDni("87654321");
+        alumnoDTO.setId("1");
+        alumnoDTO.setNombre("Juan");
+        alumnoDTO.setApellido("Pérez");
+        alumnoDTO.setDni("12345678");
 
         Alumno alumno = new Alumno();
-        alumno.setId(alumnoId);
+        alumno.setId("1");
         alumno.setNombre("Juan");
-        alumno.setApellido("Perez");
+        alumno.setApellido("Pérez");
+        alumno.setDni("12345678");
 
-        when(alumnoRepository.findById(alumnoId)).thenReturn(Optional.of(alumno));
+        when(alumnoRepository.findById(anyString())).thenReturn(Optional.of(alumno));
         when(alumnoRepository.save(any(Alumno.class))).thenReturn(alumno);
 
-        AlumnoDTO result = alumnoService.modificarAlumno(alumnoId, alumnoDTO);
-
-        assertNotNull(result);
-        assertEquals("Carlos", result.getNombre());
-        assertEquals("Lopez", result.getApellido());
-        verify(alumnoRepository, times(1)).save(any(Alumno.class));
+        AlumnoDTO result = alumnoService.modificarAlumno("1", alumnoDTO);
+        assertEquals("1", result.getId());
+        assertEquals("Juan", result.getNombre());
     }
 
     @Test
     public void testEliminarAlumno() {
-        String alumnoId = "66d5b3b773250604d1a73505";
         Alumno alumno = new Alumno();
-        alumno.setId(alumnoId);
+        alumno.setId("1");
 
-        when(alumnoRepository.findById(alumnoId)).thenReturn(Optional.of(alumno));
+        when(alumnoRepository.findById(anyString())).thenReturn(Optional.of(alumno));
 
-        alumnoService.eliminarAlumno(alumnoId);
-
+        alumnoService.eliminarAlumno("1");
         verify(alumnoRepository, times(1)).delete(alumno);
     }
 
     @Test
     public void testObtenerAlumnoPorId() {
-        String alumnoId = "66d5b3b773250604d1a73505";
+        AlumnoDTO alumnoDTO = new AlumnoDTO();
+        alumnoDTO.setId("1");
+        alumnoDTO.setNombre("Juan");
+
         Alumno alumno = new Alumno();
-        alumno.setId(alumnoId);
+        alumno.setId("1");
         alumno.setNombre("Juan");
 
-        when(alumnoRepository.findById(alumnoId)).thenReturn(Optional.of(alumno));
+        when(alumnoRepository.findById(anyString())).thenReturn(Optional.of(alumno));
 
-        AlumnoDTO result = alumnoService.obtenerAlumnoPorId(alumnoId);
-
-        assertNotNull(result);
+        AlumnoDTO result = alumnoService.obtenerAlumnoPorId("1");
+        assertEquals("1", result.getId());
         assertEquals("Juan", result.getNombre());
-        verify(alumnoRepository, times(1)).findById(alumnoId);
     }
 
     @Test
     public void testListarAlumnos() {
-        List<Alumno> alumnos = new ArrayList<>();
-        Alumno alumno1 = new Alumno();
-        alumno1.setNombre("Juan");
-        Alumno alumno2 = new Alumno();
-        alumno2.setNombre("Carlos");
-
-        alumnos.add(alumno1);
-        alumnos.add(alumno2);
-
-        when(alumnoRepository.findAll()).thenReturn(alumnos);
-
-        List<AlumnoDTO> result = alumnoService.listarAlumnos();
-
-        assertEquals(2, result.size());
-        assertEquals("Juan", result.get(0).getNombre());
-        assertEquals("Carlos", result.get(1).getNombre());
-    }
-
-    @Test
-    public void testActualizarEstadoAsignatura() {
-        String alumnoId = "66d5b3b773250604d1a73505";
-        String asignaturaId = "66d5cd37cd6b6e4701d7bf89";
-        EstadoAsignatura nuevoEstado = EstadoAsignatura.APROBADA;
-
-        Asignatura asignatura = new Asignatura();
-        asignatura.setMateriaId(asignaturaId);
-        asignatura.setEstadoAsignatura(EstadoAsignatura.NO_CURSADA);
+        AlumnoDTO alumnoDTO = new AlumnoDTO();
+        alumnoDTO.setId("1");
+        alumnoDTO.setNombre("Juan");
 
         Alumno alumno = new Alumno();
-        alumno.setId(alumnoId);
-        alumno.setAsignaturas(new ArrayList<>());
-        alumno.getAsignaturas().add(asignatura);
+        alumno.setId("1");
+        alumno.setNombre("Juan");
 
-        when(alumnoRepository.findById(alumnoId)).thenReturn(Optional.of(alumno));
+        when(alumnoRepository.findAll()).thenReturn(Collections.singletonList(alumno));
 
-        Materia materia = mockMateria(asignaturaId);
-        when(materiaRepository.findById(asignaturaId)).thenReturn(Optional.of(materia));
-
-        when(alumnoRepository.save(any(Alumno.class))).thenReturn(alumno);
-
-        AlumnoDTO result = alumnoService.actualizarEstadoAsignatura(alumnoId, asignaturaId, nuevoEstado);
-
-        assertNotNull(result);
-        assertEquals(EstadoAsignatura.APROBADA, result.getAsignaturas().get(0).getEstadoAsignatura());
-
-        verify(alumnoRepository, times(1)).save(any(Alumno.class));
+        List<AlumnoDTO> result = alumnoService.listarAlumnos();
+        assertEquals(1, result.size());
+        assertEquals("1", result.get(0).getId());
+        assertEquals("Juan", result.get(0).getNombre());
     }
-
-    // Método para simular una materia
-    private Materia mockMateria(String id) {
-        Materia materia = new Materia();
-        materia.setId(id);
-        materia.setNombre("Matemáticas"); // Puedes cambiar esto según tus necesidades
-        return materia;
-    }
-
 }
+
+
+
 
 

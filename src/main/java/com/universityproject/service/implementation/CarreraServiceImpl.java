@@ -3,6 +3,7 @@ package com.universityproject.service.implementation;
 import com.universityproject.model.dto.CarreraDTO;
 import com.universityproject.model.Carrera;
 import com.universityproject.model.Materia;
+import com.universityproject.model.exception.CarreraNotFoundException;
 import com.universityproject.repository.CarreraRepository;
 import com.universityproject.repository.MateriaRepository;
 import com.universityproject.service.CarreraService;
@@ -14,8 +15,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Implementación del servicio para gestionar operaciones relacionadas con las carreras.
- * Proporciona métodos para crear, modificar, eliminar, listar y obtener carreras.
+ * Implementación del servicio de alumnos, que maneja la lógica de negocio para las operaciones CRUD sobre Carreras.
  */
 @Service
 public class CarreraServiceImpl implements CarreraService {
@@ -39,8 +39,8 @@ public class CarreraServiceImpl implements CarreraService {
         carrera.setCodigo(carreraDTO.getCodigo());
         carrera.setDepartamento(carreraDTO.getDepartamento());
         carrera.setCantidadCuatrimestres(carreraDTO.getCantidadCuatrimestres());
-        Carrera carreraGuardada = carreraRepository.save(carrera);
-        return mapToDTO(carreraGuardada);
+        carreraRepository.save(carrera);
+        return mapToDTO(carrera);
     }
 
     /**
@@ -49,30 +49,33 @@ public class CarreraServiceImpl implements CarreraService {
      * @param id El ID de la carrera a modificar.
      * @param carreraDTO El objeto DTO que contiene los detalles actualizados de la carrera.
      * @return El objeto DTO de la carrera modificada.
-     * @throws RuntimeException Si la carrera con el ID especificado no se encuentra.
+     * @throws CarreraNotFoundException Si la carrera con el ID especificado no se encuentra.
      */
     @Override
     public CarreraDTO modificarCarrera(String id, CarreraDTO carreraDTO) {
         Carrera carrera = carreraRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Carrera no encontrada"));
+                .orElseThrow(() -> new CarreraNotFoundException("Carrera no encontrada"));
 
         carrera.setNombre(carreraDTO.getNombre());
         carrera.setCodigo(carreraDTO.getCodigo());
         carrera.setDepartamento(carreraDTO.getDepartamento());
         carrera.setCantidadCuatrimestres(carreraDTO.getCantidadCuatrimestres());
 
-        Carrera carreraActualizada = carreraRepository.save(carrera);
-        return mapToDTO(carreraActualizada);
+        carreraRepository.save(carrera);
+        return mapToDTO(carrera);
     }
 
     /**
      * Elimina una carrera existente.
      *
      * @param id El ID de la carrera a eliminar.
+     * @throws CarreraNotFoundException Si la carrera con el ID especificado no se encuentra.
      */
     @Override
     public void eliminarCarrera(String id) {
-        carreraRepository.deleteById(id);
+        Carrera carrera = carreraRepository.findById(id)
+                .orElseThrow(() -> new CarreraNotFoundException("Carrera no encontrada."));
+        carreraRepository.delete(carrera);
     }
 
     /**
@@ -96,7 +99,7 @@ public class CarreraServiceImpl implements CarreraService {
     @Override
     public CarreraDTO obtenerCarreraPorId(String id) {
         Carrera carrera = carreraRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Carrera no encontrada"));
+                .orElseThrow(() -> new CarreraNotFoundException("Carrera no encontrada"));
         return mapToDTO(carrera);
     }
 
@@ -116,7 +119,7 @@ public class CarreraServiceImpl implements CarreraService {
 
         // Obtener los nombres de las materias desde sus IDs
         List<String> materiasNombres = carrera.getMateriasIds().stream()
-                .filter(Objects::nonNull) // Asegurarse de que no haya IDs nulos
+                .filter(Objects::nonNull)
                 .map(id -> materiaRepository.findById(id)
                         .map(Materia::getNombre)
                         .orElse("Materia no encontrada"))

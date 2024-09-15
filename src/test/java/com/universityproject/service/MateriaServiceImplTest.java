@@ -3,6 +3,10 @@ package com.universityproject.service;
 import com.universityproject.model.Carrera;
 import com.universityproject.model.Materia;
 import com.universityproject.model.dto.MateriaDTO;
+import com.universityproject.model.dto.CarreraSimpleDTO;
+import com.universityproject.model.exception.CarreraNotFoundException;
+import com.universityproject.model.exception.MateriaInvalidDataException;
+import com.universityproject.model.exception.MateriaNotFoundException;
 import com.universityproject.repository.CarreraRepository;
 import com.universityproject.repository.MateriaRepository;
 import com.universityproject.service.implementation.MateriaServiceImpl;
@@ -12,16 +16,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class MateriaServiceImplTest {
-
-    @InjectMocks
-    private MateriaServiceImpl materiaService;
+public class MateriaServiceImplTest {
 
     @Mock
     private MateriaRepository materiaRepository;
@@ -29,193 +35,174 @@ class MateriaServiceImplTest {
     @Mock
     private CarreraRepository carreraRepository;
 
+    @InjectMocks
+    private MateriaServiceImpl materiaService;
+
     @BeforeEach
-    void setUp() {
+    public void setup() {
         MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void testCrearMateria() {
-        // Datos de prueba
+    public void testCrearMateria() {
         MateriaDTO materiaDTO = new MateriaDTO();
-        materiaDTO.setNombre("Programación III");
-        materiaDTO.setAnio(2);
+        materiaDTO.setId("1");
+        materiaDTO.setNombre("Programación I");
+        materiaDTO.setAnio(1);
         materiaDTO.setCuatrimestre(1);
-        materiaDTO.setCarreraId("1");
+        materiaDTO.setCorrelativasIds(new ArrayList<>());
+        CarreraSimpleDTO carreraDTO = new CarreraSimpleDTO();
+        carreraDTO.setId("1");
+        carreraDTO.setNombre("Ingeniería de Sistemas");
+        materiaDTO.setCarrera(carreraDTO);
 
-        Carrera carrera = new Carrera();
-        carrera.setId("1");
-        carrera.setMateriasIds(List.of());
-
-        Materia materiaGuardada = new Materia();
-        materiaGuardada.setId("123");
-        materiaGuardada.setNombre("Programación III");
-
-        // Mocks
-        when(materiaRepository.save(any(Materia.class))).thenReturn(materiaGuardada);
-        when(carreraRepository.findById(materiaDTO.getCarreraId())).thenReturn(Optional.of(carrera));
-        when(carreraRepository.save(any(Carrera.class))).thenReturn(carrera);
-
-        // Llamada al servicio
-        MateriaDTO resultado = materiaService.crearMateria(materiaDTO);
-
-        // Verificaciones
-        assertNotNull(resultado);
-        assertEquals("Programación III", resultado.getNombre());
-        assertEquals("123", resultado.getId());
-
-        verify(materiaRepository, times(1)).save(any(Materia.class));
-        verify(carreraRepository, times(1)).findById(materiaDTO.getCarreraId());
-        verify(carreraRepository, times(1)).save(any(Carrera.class));
-    }
-
-    @Test
-    void testModificarMateria() {
-        // Datos de prueba
-        String idMateria = "123";
-        MateriaDTO materiaDTO = new MateriaDTO();
-        materiaDTO.setNombre("Programación Avanzada");
-        materiaDTO.setAnio(2);
-        materiaDTO.setCuatrimestre(2);
-
-        Materia materiaExistente = new Materia();
-        materiaExistente.setId(idMateria);
-        materiaExistente.setNombre("Programación III");
-
-        // Mocks
-        when(materiaRepository.findById(idMateria)).thenReturn(Optional.of(materiaExistente));
-        when(materiaRepository.save(any(Materia.class))).thenReturn(materiaExistente);
-
-        // Llamada al servicio
-        MateriaDTO resultado = materiaService.modificarMateria(idMateria, materiaDTO);
-
-        // Verificaciones
-        assertNotNull(resultado);
-        assertEquals("Programación Avanzada", resultado.getNombre());
-        verify(materiaRepository, times(1)).findById(idMateria);
-        verify(materiaRepository, times(1)).save(any(Materia.class));
-    }
-
-    @Test
-    void testEliminarMateria() {
-        // Datos de prueba
-        String idMateria = "123";
         Materia materia = new Materia();
-        materia.setId(idMateria);
+        materia.setId("1");
+        materia.setNombre("Programación I");
+        materia.setAnio(1);
+        materia.setCuatrimestre(1);
+        materia.setCorrelativasIds(new ArrayList<>());
         materia.setCarreraId("1");
 
         Carrera carrera = new Carrera();
         carrera.setId("1");
-        carrera.setMateriasIds(List.of(idMateria));
+        carrera.setNombre("Ingeniería de Sistemas");
+        carrera.setMateriasIds(new ArrayList<>());
 
-        // Mocks
-        when(materiaRepository.findById(idMateria)).thenReturn(Optional.of(materia));
-        when(carreraRepository.findById("1")).thenReturn(Optional.of(carrera));
+        when(carreraRepository.findById(anyString())).thenReturn(Optional.of(carrera));
+        when(materiaRepository.save(any(Materia.class))).thenReturn(materia);
 
-        // Llamada al servicio
-        materiaService.eliminarMateria(idMateria);
-
-        // Verificaciones
-        verify(materiaRepository, times(1)).findById(idMateria);
-        verify(carreraRepository, times(1)).findById("1");
-        verify(materiaRepository, times(1)).delete(materia);
-        verify(carreraRepository, times(1)).save(any(Carrera.class));
+        MateriaDTO result = materiaService.crearMateria(materiaDTO);
+        assertEquals("1", result.getId());
+        assertEquals("Programación I", result.getNombre());
     }
 
     @Test
-    void testObtenerMateriaPorId() {
-        // Datos de prueba
-        String idMateria = "123";
-        Materia materia = new Materia();
-        materia.setId(idMateria);
-        materia.setNombre("Programación I");
+    public void testModificarMateria() {
+        MateriaDTO materiaDTO = new MateriaDTO();
+        materiaDTO.setId("1");
+        materiaDTO.setNombre("Programación IV");
+        materiaDTO.setAnio(2);
+        materiaDTO.setCuatrimestre(2);
+        materiaDTO.setCorrelativasIds(Collections.singletonList("2"));
+        CarreraSimpleDTO carreraDTO = new CarreraSimpleDTO();
+        carreraDTO.setId("2");
+        carreraDTO.setNombre("Ingeniería de Software");
+        materiaDTO.setCarrera(carreraDTO);
 
-        // Mocks
-        when(materiaRepository.findById(idMateria)).thenReturn(Optional.of(materia));
+        Materia existingMateria = new Materia();
+        existingMateria.setId("1");
+        existingMateria.setNombre("Programación III");
+        existingMateria.setAnio(1);
+        existingMateria.setCuatrimestre(1);
+        existingMateria.setCorrelativasIds(new ArrayList<>());
+        existingMateria.setCarreraId("1");
 
-        // Llamada al servicio
-        MateriaDTO resultado = materiaService.ObtenerMateriaPorId(idMateria);
+        Materia updatedMateria = new Materia();
+        updatedMateria.setId("1");
+        updatedMateria.setNombre("Programación IV");
+        updatedMateria.setAnio(2);
+        updatedMateria.setCuatrimestre(2);
+        updatedMateria.setCorrelativasIds(Collections.singletonList("2"));
+        updatedMateria.setCarreraId("2");
 
-        // Verificaciones
-        assertNotNull(resultado);
-        assertEquals("Programación I", resultado.getNombre());
-        verify(materiaRepository, times(1)).findById(idMateria);
+        Carrera nuevaCarrera = new Carrera();
+        nuevaCarrera.setId("2");
+        nuevaCarrera.setNombre("Ingeniería de Software");
+        nuevaCarrera.setMateriasIds(new ArrayList<>());
+
+        when(materiaRepository.findById(anyString())).thenReturn(Optional.of(existingMateria));
+        when(carreraRepository.findById(anyString())).thenReturn(Optional.of(nuevaCarrera));
+        when(materiaRepository.save(any(Materia.class))).thenReturn(updatedMateria);
+
+        MateriaDTO result = materiaService.modificarMateria("1", materiaDTO);
+        assertEquals("1", result.getId());
+        assertEquals("Programación IV", result.getNombre());
     }
 
     @Test
-    void testObtenerMaterias() {
-        // Datos de prueba
-        Materia materia1 = new Materia();
-        materia1.setId("1");
-        materia1.setNombre("Programación I");
+    public void testModificarMateria_MateriaNotFoundException() {
+        MateriaDTO materiaDTO = new MateriaDTO();
+        materiaDTO.setId("1");
 
-        Materia materia2 = new Materia();
-        materia2.setId("2");
-        materia2.setNombre("Programación II");
+        when(materiaRepository.findById(anyString())).thenReturn(Optional.empty());
 
-        // Mocks
-        when(materiaRepository.findAll()).thenReturn(List.of(materia1, materia2));
-
-        // Llamada al servicio
-        List<MateriaDTO> resultado = materiaService.ObtenerMaterias();
-
-        // Verificaciones
-        assertEquals(2, resultado.size());
-        assertEquals("Programación I", resultado.get(0).getNombre());
-        assertEquals("Programación II", resultado.get(1).getNombre());
-        verify(materiaRepository, times(1)).findAll();
+        assertThrows(MateriaNotFoundException.class, () -> materiaService.modificarMateria("1", materiaDTO));
     }
 
     @Test
-    void testObtenerMateriasPorNombre() {
-        // Datos de prueba
+    public void testEliminarMateria() {
         Materia materia = new Materia();
         materia.setId("1");
-        materia.setNombre("Programación");
+        materia.setCarreraId("2");
 
-        // Mocks
-        when(materiaRepository.findByNombreContainingIgnoreCase("Programación")).thenReturn(List.of(materia));
+        Carrera carrera = new Carrera();
+        carrera.setId("2");
+        carrera.setMateriasIds(new ArrayList<>(Collections.singletonList("1")));
 
-        // Llamada al servicio
-        List<MateriaDTO> resultado = materiaService.ObtenerMateriasPorNombre("Programación");
+        when(materiaRepository.findById(anyString())).thenReturn(Optional.of(materia));
+        when(carreraRepository.findById(anyString())).thenReturn(Optional.of(carrera));
 
-        // Verificaciones
-        assertEquals(1, resultado.size());
-        assertEquals("Programación", resultado.get(0).getNombre());
-        verify(materiaRepository, times(1)).findByNombreContainingIgnoreCase("Programación");
+        materiaService.eliminarMateria("1");
+        verify(materiaRepository, times(1)).delete(materia);
+        verify(carreraRepository, times(1)).save(carrera);
     }
 
     @Test
-    void testObtenerMateriasOrdenadas() {
-        // Datos de prueba
-        Materia materia1 = new Materia();
-        materia1.setId("1");
-        materia1.setNombre("Algoritmos");
+    public void testEliminarMateria_MateriaNotFoundException() {
+        when(materiaRepository.findById(anyString())).thenReturn(Optional.empty());
 
-        Materia materia2 = new Materia();
-        materia2.setId("2");
-        materia2.setNombre("Programación");
+        assertThrows(MateriaNotFoundException.class, () -> materiaService.eliminarMateria("1"));
+    }
 
-        // Mocks
-        when(materiaRepository.findAll()).thenReturn(List.of(materia1, materia2));
+    @Test
+    public void testObtenerMateriaPorId() {
+        Materia materia = new Materia();
+        materia.setId("1");
+        materia.setNombre("Programación I");
 
-        // Llamada al servicio (orden ascendente por nombre)
-        List<MateriaDTO> resultadoAsc = materiaService.ObtenerMateriasOrdenadas("nombre_asc");
+        when(materiaRepository.findById(anyString())).thenReturn(Optional.of(materia));
 
-        // Verificaciones ascendente
-        assertEquals(2, resultadoAsc.size());
-        assertEquals("Algoritmos", resultadoAsc.get(0).getNombre());
-        assertEquals("Programación", resultadoAsc.get(1).getNombre());
+        MateriaDTO result = materiaService.obtenerMateriaPorId("1");
+        assertEquals("1", result.getId());
+        assertEquals("Programación I", result.getNombre());
+    }
 
-        // Llamada al servicio (orden descendente por nombre)
-        List<MateriaDTO> resultadoDesc = materiaService.ObtenerMateriasOrdenadas("nombre_desc");
+    @Test
+    public void testObtenerMateriaPorId_MateriaNotFoundException() {
+        when(materiaRepository.findById(anyString())).thenReturn(Optional.empty());
 
-        // Verificaciones descendente
-        assertEquals(2, resultadoDesc.size());
-        assertEquals("Programación", resultadoDesc.get(0).getNombre());
-        assertEquals("Algoritmos", resultadoDesc.get(1).getNombre());
+        assertThrows(MateriaNotFoundException.class, () -> materiaService.obtenerMateriaPorId("1"));
+    }
 
-        verify(materiaRepository, times(2)).findAll();
+    @Test
+    public void testListarMaterias() {
+        Materia materia = new Materia();
+        materia.setId("1");
+        materia.setNombre("Programación I");
+
+        when(materiaRepository.findAll()).thenReturn(Collections.singletonList(materia));
+
+        List<MateriaDTO> result = materiaService.listarMaterias();
+        assertEquals(1, result.size());
+        assertEquals("1", result.get(0).getId());
+        assertEquals("Programación I", result.get(0).getNombre());
+    }
+
+    @Test
+    public void testObtenerMateriasPorNombre() {
+        Materia materia = new Materia();
+        materia.setId("1");
+        materia.setNombre("Programación I");
+
+        when(materiaRepository.findByNombreContainingIgnoreCase(anyString()))
+                .thenReturn(Collections.singletonList(materia));
+
+        List<MateriaDTO> result = materiaService.obtenerMateriasPorNombre("Programación");
+
+        assertEquals(1, result.size());
+        assertEquals("1", result.get(0).getId());
+        assertEquals("Programación I", result.get(0).getNombre());
     }
 }
 

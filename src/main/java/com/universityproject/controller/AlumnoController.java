@@ -2,10 +2,15 @@ package com.universityproject.controller;
 
 import com.universityproject.model.EstadoAsignatura;
 import com.universityproject.model.dto.AlumnoDTO;
+import com.universityproject.model.exception.AlumnoInvalidDataException;
+import com.universityproject.model.exception.AlumnoNotFoundException;
+import com.universityproject.model.exception.AsignaturaNotFoundException;
 import com.universityproject.service.AlumnoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -13,6 +18,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/alumnos")
+@Validated
 public class AlumnoController {
 
     @Autowired
@@ -24,7 +30,7 @@ public class AlumnoController {
      * @return El DTO del alumno recién creado.
      */
     @PostMapping
-    public AlumnoDTO crearAlumno(@RequestBody AlumnoDTO alumnoDTO) {
+    public AlumnoDTO crearAlumno(@Valid @RequestBody AlumnoDTO alumnoDTO) {
         return alumnoService.crearAlumno(alumnoDTO);
     }
 
@@ -35,13 +41,14 @@ public class AlumnoController {
      * @return El DTO del alumno modificado.
      */
     @PutMapping("/{idAlumno}")
-    public AlumnoDTO modificarAlumno(@PathVariable String idAlumno, @RequestBody AlumnoDTO alumnoDTO) {
+    public AlumnoDTO modificarAlumno(@PathVariable String idAlumno, @Valid @RequestBody AlumnoDTO alumnoDTO) {
         return alumnoService.modificarAlumno(idAlumno, alumnoDTO);
     }
 
     /**
      * Elimina un alumno del sistema.
      * @param idAlumno El ID del alumno a eliminar.
+     * @throws AlumnoNotFoundException Si no se encuentra el alumno con el ID proporcionado.
      */
     @DeleteMapping("/{idAlumno}")
     public void eliminarAlumno(@PathVariable String idAlumno) {
@@ -79,4 +86,7 @@ public class AlumnoController {
         return alumnoService.actualizarEstadoAsignatura(idAlumno, idAsignatura, estado);
     }
 }
+
+
+
 

@@ -11,11 +11,12 @@ public interface MateriaService {
 
     void eliminarMateria(String id);
 
-    MateriaDTO ObtenerMateriaPorId(String id);
+    MateriaDTO obtenerMateriaPorId(String id);
 
-    List<MateriaDTO> ObtenerMaterias();
+    List<MateriaDTO> listarMaterias();
 
-    List<MateriaDTO> ObtenerMateriasPorNombre(String nombre);
+    List<MateriaDTO> obtenerMateriasPorNombre(String nombre);
 
-    List<MateriaDTO> ObtenerMateriasOrdenadas(String ordenBy);
+    List<MateriaDTO> obtenerMateriasOrdenadas(String ordenBy);
+
 }

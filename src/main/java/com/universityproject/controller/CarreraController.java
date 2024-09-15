@@ -1,6 +1,9 @@
 package com.universityproject.controller;
 
 import com.universityproject.model.dto.CarreraDTO;
+import com.universityproject.model.exception.AlumnoInvalidDataException;
+import com.universityproject.model.exception.CarreraInvalidDataException;
+import com.universityproject.model.exception.CarreraNotFoundException;
 import com.universityproject.service.CarreraService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -9,7 +12,6 @@ import java.util.List;
 
 /**
  * Controlador para manejar las operaciones relacionadas con las carreras.
- * Proporciona endpoints para crear, modificar, eliminar y listar carreras.
  */
 @RestController
 @RequestMapping("/carreras")

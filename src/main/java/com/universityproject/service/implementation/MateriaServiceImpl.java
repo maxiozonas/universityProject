@@ -5,6 +5,10 @@ import com.universityproject.model.dto.CorrelativaSimpleDTO;
 import com.universityproject.model.dto.MateriaDTO;
 import com.universityproject.model.Carrera;
 import com.universityproject.model.Materia;
+import com.universityproject.model.exception.CarreraInvalidDataException;
+import com.universityproject.model.exception.CarreraNotFoundException;
+import com.universityproject.model.exception.MateriaInvalidDataException;
+import com.universityproject.model.exception.MateriaNotFoundException;
 import com.universityproject.repository.CarreraRepository;
 import com.universityproject.repository.MateriaRepository;
 import com.universityproject.service.MateriaService;
@@ -30,37 +34,38 @@ public class MateriaServiceImpl implements MateriaService {
     private CarreraRepository carreraRepository;
 
     /**
-     * Crea una nueva Materia y la asocia a una Carrera.
+     * Crea una nueva Materia.
      *
      * @param materiaDTO Objeto DTO que contiene los datos de la Materia a crear.
      * @return La Materia creada en forma de DTO.
      */
     @Override
     public MateriaDTO crearMateria(MateriaDTO materiaDTO) {
-        Materia materia = new Materia();
-        materia.setNombre(materiaDTO.getNombre());
-        materia.setAnio(materiaDTO.getAnio());
-        materia.setCuatrimestre(materiaDTO.getCuatrimestre());
-        materia.setCorrelativasIds(materiaDTO.getCorrelativasIds());
-        materia.setCarreraId(materiaDTO.getCarrera().getId());
+        try {
+            Materia materia = new Materia();
+            materia.setNombre(materiaDTO.getNombre());
+            materia.setAnio(materiaDTO.getAnio());
+            materia.setCuatrimestre(materiaDTO.getCuatrimestre());
+            materia.setCorrelativasIds(materiaDTO.getCorrelativasIds());
+            materia.setCarreraId(materiaDTO.getCarrera().getId());
 
-        materia = materiaRepository.save(materia);
+            // Guardar materia
+            materia = materiaRepository.save(materia);
 
-        Carrera carrera = carreraRepository.findById(materiaDTO.getCarrera().getId())
-                .orElseThrow(() -> new RuntimeException("Carrera no encontrada"));
-
-        List<String> materiasIds = Optional.ofNullable(carrera.getMateriasIds())
-                .map(ArrayList::new) // Convertir a ArrayList para asegurar que sea mutable
-                .orElse(new ArrayList<>());
-
-        if (!materiasIds.contains(materia.getId())) {
+            // Asociar la materia con la carrera correspondiente
+            Carrera carrera = carreraRepository.findById(materiaDTO.getCarrera().getId())
+                    .orElseThrow(() -> new CarreraNotFoundException("Carrera no encontrada"));
+            List<String> materiasIds = Optional.ofNullable(carrera.getMateriasIds())
+                    .map(ArrayList::new)
+                    .orElse(new ArrayList<>());
             materiasIds.add(materia.getId());
+            carrera.setMateriasIds(materiasIds);
+            carreraRepository.save(carrera);
+
+            return mapToDTO(materia);
+        } catch (Exception e) {
+            throw new MateriaInvalidDataException("Error al crear materia: " + e.getMessage());
         }
-
-        carrera.setMateriasIds(materiasIds);
-        carreraRepository.save(carrera);
-
-        return mapToDTO(materia);
     }
 
     /**
@@ -72,17 +77,29 @@ public class MateriaServiceImpl implements MateriaService {
      */
     @Override
     public MateriaDTO modificarMateria(String id, MateriaDTO materiaDTO) {
-        Materia materia = materiaRepository.findById(id).orElseThrow(() -> new RuntimeException("Materia no encontrada"));
+        Materia materia = materiaRepository.findById(id)
+                .orElseThrow(() -> new MateriaNotFoundException("Materia no encontrada"));
 
+        // Actualizar los campos de la materia
         materia.setNombre(materiaDTO.getNombre());
         materia.setAnio(materiaDTO.getAnio());
         materia.setCuatrimestre(materiaDTO.getCuatrimestre());
         materia.setCorrelativasIds(materiaDTO.getCorrelativasIds());
 
-        materiaRepository.save(materia);
+        // Verificar si la carrera cambió y actualizar la referencia
+        if (!materia.getCarreraId().equals(materiaDTO.getCarrera().getId())) {
+            Carrera nuevaCarrera = carreraRepository.findById(materiaDTO.getCarrera().getId())
+                    .orElseThrow(() -> new MateriaInvalidDataException("Carrera no encontrada"));
+            List<String> materiasIds = nuevaCarrera.getMateriasIds();
+            materiasIds.add(materia.getId());
+            nuevaCarrera.setMateriasIds(materiasIds);
+            carreraRepository.save(nuevaCarrera);
+        }
 
+        materiaRepository.save(materia);
         return mapToDTO(materia);
     }
+
 
     /**
      * Elimina una Materia y la desasocia de su Carrera correspondiente.
@@ -91,14 +108,15 @@ public class MateriaServiceImpl implements MateriaService {
      */
     @Override
     public void eliminarMateria(String id) {
-        Materia materia = materiaRepository.findById(id).orElseThrow(() -> new RuntimeException("Materia no encontrada"));
+        Materia materia = materiaRepository.findById(id)
+                .orElseThrow(() -> new MateriaNotFoundException("Materia no encontrada"));
 
-        Carrera carrera = carreraRepository.findById(materia.getCarreraId()).orElseThrow(() -> new RuntimeException("Carrera no encontrada"));
+        Carrera carrera = carreraRepository.findById(materia.getCarreraId())
+                .orElseThrow(() -> new CarreraInvalidDataException("Carrera no encontrada"));
 
         List<String> materiasIds = Optional.ofNullable(carrera.getMateriasIds())
-                .map(ArrayList::new) // Convertir a ArrayList para asegurar que sea mutable
+                .map(ArrayList::new)
                 .orElse(new ArrayList<>());
-
         materiasIds.remove(materia.getId());
         carrera.setMateriasIds(materiasIds);
         carreraRepository.save(carrera);
@@ -109,12 +127,14 @@ public class MateriaServiceImpl implements MateriaService {
     /**
      * Obtiene una Materia por su ID.
      *
-     * @param id El ID de la Materia a buscar.
+     * @param id El ID de la Materia a obtener.
      * @return La Materia correspondiente en forma de DTO.
      */
     @Override
-    public MateriaDTO ObtenerMateriaPorId(String id) {
-        Materia materia = materiaRepository.findById(id).orElseThrow(() -> new RuntimeException("Materia no encontrada"));
+    public MateriaDTO obtenerMateriaPorId(String id) {
+        Materia materia = materiaRepository.findById(id)
+                .orElseThrow(() -> new MateriaNotFoundException("Materia no encontrada"));
+
         return mapToDTO(materia);
     }
 
@@ -124,8 +144,9 @@ public class MateriaServiceImpl implements MateriaService {
      * @return Lista de MateriaDTO con todas las Materias.
      */
     @Override
-    public List<MateriaDTO> ObtenerMaterias() {
-        return materiaRepository.findAll().stream().map(this::mapToDTO).collect(Collectors.toList());
+    public List<MateriaDTO> listarMaterias() {
+        List<Materia> materias = materiaRepository.findAll();
+        return materias.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     /**
@@ -135,7 +156,7 @@ public class MateriaServiceImpl implements MateriaService {
      * @return Lista de MateriaDTO que coinciden con el nombre filtrado.
      */
     @Override
-    public List<MateriaDTO> ObtenerMateriasPorNombre(String nombre) {
+    public List<MateriaDTO> obtenerMateriasPorNombre(String nombre) {
         return materiaRepository.findByNombreContainingIgnoreCase(nombre)
                 .stream()
                 .map(this::mapToDTO)
@@ -149,7 +170,7 @@ public class MateriaServiceImpl implements MateriaService {
      * @return Lista de MateriaDTO ordenadas.
      */
     @Override
-    public List<MateriaDTO> ObtenerMateriasOrdenadas(String orderBy) {
+    public List<MateriaDTO> obtenerMateriasOrdenadas(String orderBy) {
         List<Materia> materias = materiaRepository.findAll();
         Comparator<Materia> comparator = switch (orderBy) {
             case "nombre_asc" -> Comparator.comparing(Materia::getNombre);
@@ -187,7 +208,7 @@ public class MateriaServiceImpl implements MateriaService {
                             correlativaDTO.setNombre(correlativa.getNombre());
                             return correlativaDTO;
                         })
-                        .orElse(null)) // Puedes manejar el caso de correlativa no encontrada
+                        .orElse(null))
                 .filter(correlativa -> correlativa != null)
                 .collect(Collectors.toList());
 
@@ -201,7 +222,7 @@ public class MateriaServiceImpl implements MateriaService {
                     carreraSimpleDTO.setNombre(carrera.getNombre());
                     return carreraSimpleDTO;
                 })
-                .orElse(null); // Puedes manejar el caso de carrera no encontrada
+                .orElse(null);
 
         materiaDTO.setCarrera(carreraDTO);
 

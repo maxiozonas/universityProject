@@ -4,7 +4,8 @@ import com.universityproject.model.EstadoAsignatura;
 import lombok.Data;
 
 @Data
-public class AsignaturaDTO {
+public class
+AsignaturaDTO {
     private String materiaNombre;
     private EstadoAsignatura estadoAsignatura;
 }

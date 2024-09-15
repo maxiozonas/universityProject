@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class CarreraSimpleDTO {
-    private String Id;
-    private String Nombre;
+    private String id;
+    private String nombre;
 }
